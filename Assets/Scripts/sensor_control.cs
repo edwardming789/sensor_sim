@@ -11,13 +11,43 @@ public class sensor_control : MonoBehaviour
     public string topicName;
     public Rigidbody sensor;
     public bool is_stop = true;
-    private float target_vel;
+    private Vector3 target_vel;
     // Start is called before the first frame update
     void Start()
     {
         ros = ROSConnection.instance;
-        ros.Subscribe<MCommand>("simulator/command",command_callback);
+        //ros.Subscribe<MCommand>("simulator/command",command_callback);
+        ros.ImplementService<MWinchTriggerRequest>("winch/winch_up", winch_up_callback);
+        ros.ImplementService<MWinchTriggerRequest>("winch/winch_down", winch_down_callback);
+        ros.ImplementService<MWinchTriggerRequest>("winch/winch_stop", winch_stop_callback);
         //sensor.isKinematic = true;
+    }
+
+    MWinchTriggerResponse winch_up_callback(MWinchTriggerRequest req)
+    {
+        target_vel = new Vector3(0,0.3302f,0);
+        is_stop = false;
+        MWinchTriggerResponse res = new MWinchTriggerResponse();
+        res.result = true;
+        return res;
+    }
+
+    MWinchTriggerResponse winch_down_callback(MWinchTriggerRequest req)
+    {
+        target_vel = new Vector3(0,-0.3566f,0);
+        is_stop = false;
+        MWinchTriggerResponse res = new MWinchTriggerResponse();
+        res.result = true;
+        return res;
+    }
+
+    MWinchTriggerResponse winch_stop_callback(MWinchTriggerRequest req)
+    {
+        target_vel = new Vector3(0,0,0);
+        is_stop = true;
+        MWinchTriggerResponse res = new MWinchTriggerResponse();
+        res.result = true;
+        return res;
     }
 
     // Update is called once per frame
@@ -35,6 +65,7 @@ public class sensor_control : MonoBehaviour
         else
         {
             sensor.isKinematic = false;
+            sensor.velocity = target_vel;
         }
             
     }
@@ -50,14 +81,14 @@ public class sensor_control : MonoBehaviour
     //     return new MSetVelocityResponse(true);
     // }
 
-    void command_callback(MCommand msg)
-    {
-        target_vel = msg.vel;
-        //Debug.Log(msg);
-        sensor.velocity = new Vector3(0,target_vel,0);
-        if(target_vel == 0)
-            is_stop = true;
-        else
-            is_stop = false;
-    }
+    // void command_callback(MCommand msg)
+    // {
+    //     target_vel = msg.vel;
+    //     //Debug.Log(msg);
+    //     sensor.velocity = new Vector3(0,target_vel,0);
+    //     if(target_vel == 0)
+    //         is_stop = true;
+    //     else
+    //         is_stop = false;
+    // }
 }
